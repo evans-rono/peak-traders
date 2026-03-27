@@ -1,0 +1,396 @@
+<!-- frontend/pages/deposit.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Deposit & Withdraw — PeakTrader</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=IBM+Plex+Mono:wght@400;500&family=Manrope:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/main.css">
+  <link rel="stylesheet" href="../css/dashboard.css">
+  <style>
+    .fin-tabs {
+      display: flex;
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 4px;
+      margin-bottom: 2rem;
+      max-width: 500px;
+    }
+
+    .fin-tab {
+      flex: 1;
+      padding: 10px;
+      text-align: center;
+      border-radius: 7px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      background: none;
+      color: var(--muted2);
+      transition: all 0.2s;
+      font-family: var(--font-body);
+    }
+
+    .fin-tab.active {
+      background: var(--accent);
+      color: #000;
+    }
+
+    .fin-section { display: none; }
+    .fin-section.active { display: block; }
+
+    .method-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 12px;
+      margin-bottom: 1.5rem;
+    }
+
+    .method-card {
+      background: var(--bg2);
+      border: 2px solid var(--border);
+      border-radius: 10px;
+      padding: 1.5rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-align: center;
+    }
+
+    .method-card:hover { border-color: var(--border2); }
+    .method-card.selected {
+      border-color: var(--accent);
+      background: var(--accent-dim);
+    }
+
+    .method-icon { font-size: 2rem; margin-bottom: 10px; }
+    .method-name { font-size: 14px; font-weight: 600; }
+    .method-time { font-size: 12px; color: var(--muted); margin-top: 4px; }
+
+    .fin-card {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.5rem;
+      max-width: 600px;
+    }
+
+    .steps-box {
+      background: var(--bg3);
+      border-radius: 8px;
+      padding: 1.25rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .step {
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+      margin-bottom: 12px;
+    }
+
+    .step:last-child { margin-bottom: 0; }
+
+    .step-num {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: var(--accent-dim);
+      border: 1px solid rgba(0,229,160,0.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--accent);
+      flex-shrink: 0;
+    }
+
+    .step-text { font-size: 13px; color: var(--muted2); line-height: 1.6; }
+    .step-text strong { color: var(--text); }
+
+    .amount-presets {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 1rem;
+    }
+
+    .preset-btn {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--muted2);
+      font-family: var(--font-mono);
+      font-size: 12px;
+      padding: 8px 16px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .preset-btn:hover, .preset-btn.active {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: var(--accent-dim);
+    }
+
+    .info-box {
+      background: var(--accent-dim);
+      border: 1px solid rgba(0,229,160,0.15);
+      border-radius: 8px;
+      padding: 1rem 1.25rem;
+      margin: 1rem 0;
+      font-size: 13px;
+      color: var(--muted2);
+      line-height: 1.6;
+    }
+
+    .info-box strong { color: var(--accent); }
+
+    .disclaimer {
+      background: rgba(245,158,11,0.07);
+      border: 1px solid rgba(245,158,11,0.2);
+      border-radius: 8px;
+      padding: 1rem 1.25rem;
+      margin-top: 1.5rem;
+      font-size: 12px;
+      color: var(--muted2);
+      line-height: 1.65;
+    }
+
+    .disclaimer strong { color: var(--amber); }
+
+    .balance-summary {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+      background: var(--bg3);
+      border-radius: 8px;
+      padding: 1.25rem;
+      margin-bottom: 1.5rem;
+    }
+
+    @media (max-width: 640px) {
+      .balance-summary { grid-template-columns: 1fr; }
+      .method-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+  </style>
+</head>
+<body class="dashboard" data-page="deposit">
+  
+  <aside class="sidebar">
+    <div class="sidebar-logo">Peak<span>Trader</span></div>
+    <div class="sidebar-section">Trading</div>
+    <a href="dashboard.html" class="sidebar-item"><span class="sidebar-icon">◈</span> Dashboard</a>
+    <a href="dashboard.html" class="sidebar-item"><span class="sidebar-icon">📈</span> Trade Now</a>
+    <div class="sidebar-section">Account</div>
+    <a href="deposit.html" class="sidebar-item active"><span class="sidebar-icon">💰</span> Deposit / Withdraw</a>
+    <button class="sidebar-item"><span class="sidebar-icon">⚙️</span> Settings</button>
+    <div class="sidebar-bottom">
+      <div class="user-pill">
+        <div class="avatar user-avatar">--</div>
+        <div class="user-info">
+          <div class="user-name">Loading...</div>
+          <div class="user-bal user-balance">KES 0.00</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <header class="top-bar">
+      <h1 class="page-title">Deposits & Withdrawals</h1>
+      <div style="background: var(--accent-dim); border: 1px solid rgba(0,229,160,0.2); border-radius: 6px; padding: 6px 14px; font-family: var(--font-mono); font-size: 13px; color: var(--accent);">
+        Balance: <span class="user-balance">KES 0.00</span>
+      </div>
+    </header>
+
+    <div class="content-area">
+      <!-- Tabs -->
+      <div class="fin-tabs">
+        <button class="fin-tab active" data-tab="depositSection">Deposit</button>
+        <button class="fin-tab" data-tab="withdrawSection">Withdraw</button>
+        <button class="fin-tab" data-tab="historySection">History</button>
+      </div>
+
+      <!-- Deposit Section -->
+      <div class="fin-section active" id="depositSection">
+        <div class="form-label" style="margin-bottom: 12px;">Select Payment Method</div>
+        <div class="method-grid">
+          <div class="method-card selected" data-method="mpesa">
+            <div class="method-icon">📱</div>
+            <div class="method-name">M-Pesa</div>
+            <div class="method-time">Instant</div>
+          </div>
+          <div class="method-card" data-method="card">
+            <div class="method-icon">💳</div>
+            <div class="method-name">Visa / Mastercard</div>
+            <div class="method-time">Instant</div>
+          </div>
+          <div class="method-card" data-method="bank">
+            <div class="method-icon">🏦</div>
+            <div class="method-name">Bank Transfer</div>
+            <div class="method-time">1–2 days</div>
+          </div>
+          <div class="method-card" data-method="crypto">
+            <div class="method-icon">₿</div>
+            <div class="method-name">Crypto (USDT)</div>
+            <div class="method-time">~10 mins</div>
+          </div>
+        </div>
+
+        <div class="fin-card" id="mpesaForm">
+          <div class="panel-title" style="margin-bottom: 1rem;">M-Pesa STK Push</div>
+          
+          <div class="steps-box">
+            <div class="step">
+              <div class="step-num">1</div>
+              <div class="step-text">Enter your <strong>M-Pesa registered phone number</strong> and the amount below</div>
+            </div>
+            <div class="step">
+              <div class="step-num">2</div>
+              <div class="step-text">Click <strong>Deposit Now</strong> — you'll receive an M-Pesa prompt on your phone</div>
+            </div>
+            <div class="step">
+              <div class="step-num">3</div>
+              <div class="step-text">Enter your <strong>M-Pesa PIN</strong> to confirm payment</div>
+            </div>
+            <div class="step">
+              <div class="step-num">4</div>
+              <div class="step-text">Funds reflect in your trading account <strong>instantly</strong></div>
+            </div>
+          </div>
+
+          <form id="depositForm">
+            <div class="form-group">
+              <label class="form-label">M-Pesa Phone Number</label>
+              <input type="tel" class="form-input" id="mpesaPhone" placeholder="2547XXXXXXXX" value="2547" required>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Amount (KES)</label>
+              <div class="amount-presets">
+                <button type="button" class="preset-btn active" data-type="deposit" data-amount="500">KES 500</button>
+                <button type="button" class="preset-btn" data-type="deposit" data-amount="1000">KES 1,000</button>
+                <button type="button" class="preset-btn" data-type="deposit" data-amount="2500">KES 2,500</button>
+                <button type="button" class="preset-btn" data-type="deposit" data-amount="5000">KES 5,000</button>
+                <button type="button" class="preset-btn" data-type="deposit" data-amount="10000">KES 10,000</button>
+              </div>
+              <input type="number" class="form-input" id="depositAmount" value="500" min="500" required style="margin-top: 8px;">
+            </div>
+
+            <div class="info-box">
+              <strong>Minimum deposit:</strong> KES 500 &nbsp;|&nbsp; <strong>Maximum:</strong> KES 150,000 per transaction<br>
+              Funds are credited instantly. No deposit fees charged by PeakTrader.
+            </div>
+
+            <button type="submit" class="btn-full">Deposit Now via M-Pesa</button>
+          </form>
+        </div>
+
+        <div class="disclaimer">
+          <strong>⚠️ Risk Warning:</strong> Binary options trading involves significant risk of loss. 
+          Deposited funds may be partially or fully lost. Only deposit money you can afford to lose. 
+          PeakTrader does not guarantee profits.
+        </div>
+      </div>
+
+      <!-- Withdraw Section -->
+      <div class="fin-section" id="withdrawSection">
+        <div class="fin-card">
+          <div class="panel-title" style="margin-bottom: 1rem;">Withdraw Funds</div>
+          
+          <div class="balance-summary">
+            <div>
+              <div class="metric-label">Available Balance</div>
+              <div style="font-family: var(--font-mono); font-size: 1.1rem; font-weight: 700; color: var(--accent); margin-top: 4px;" id="totalBalance">
+                KES 0
+              </div>
+            </div>
+            <div>
+              <div class="metric-label">In Open Trades</div>
+              <div style="font-family: var(--font-mono); font-size: 1.1rem; font-weight: 700; color: var(--amber); margin-top: 4px;" id="lockedBalance">
+                KES 0
+              </div>
+            </div>
+            <div>
+              <div class="metric-label">Withdrawable</div>
+              <div style="font-family: var(--font-mono); font-size: 1.1rem; font-weight: 700; margin-top: 4px;" id="availableBalance">
+                KES 0
+              </div>
+            </div>
+          </div>
+
+          <form id="withdrawForm">
+            <div class="form-group">
+              <label class="form-label">Withdrawal Method</label>
+              <select class="form-select" id="withdrawMethod">
+                <option value="mpesa">M-Pesa (Registered Number)</option>
+                <option value="bank">Bank Transfer</option>
+                <option value="crypto">USDT (TRC20)</option>
+              </select>
+            </div>
+
+            <div class="form-group" id="mpesaWithdrawField">
+              <label class="form-label">M-Pesa Number</label>
+              <input type="tel" class="form-input" id="withdrawPhone" placeholder="2547XXXXXXXX">
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Amount to Withdraw (KES)</label>
+              <div class="amount-presets">
+                <button type="button" class="preset-btn" data-type="withdraw" data-amount="1000">KES 1,000</button>
+                <button type="button" class="preset-btn" data-type="withdraw" data-amount="5000">KES 5,000</button>
+                <button type="button" class="preset-btn" data-type="withdraw" data-amount="10000">KES 10,000</button>
+                <button type="button" class="preset-btn" data-type="withdraw" data-amount="0">All Available</button>
+              </div>
+              <input type="number" class="form-input" id="withdrawAmount" value="1000" min="1000" required style="margin-top: 8px;">
+            </div>
+
+            <div class="info-box" style="background: rgba(59,130,246,0.07); border-color: rgba(59,130,246,0.2);">
+              <strong style="color: var(--blue);">Processing time:</strong> M-Pesa withdrawals are processed within 24 hours. 
+              Bank transfers take 1–3 business days. Minimum withdrawal: KES 1,000.
+            </div>
+
+            <button type="submit" class="btn-full" style="background: var(--red);">Request Withdrawal</button>
+          </form>
+        </div>
+      </div>
+
+      <!-- History Section -->
+      <div class="fin-section" id="historySection">
+        <div class="data-table" style="margin-top: 0;">
+          <div class="table-header">
+            <div class="table-title">Transaction History</div>
+            <button class="nav-btn" style="font-size: 12px; background: none; border: none; color: var(--accent); cursor: pointer;">Export CSV</button>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Type</th>
+                  <th>Method</th>
+                  <th>Amount</th>
+                  <th>Status</th>
+                  <th>Reference</th>
+                </tr>
+              </thead>
+              <tbody id="transactionsBody">
+                <!-- Dynamic content -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script src="../js/api.js"></script>
+  <script src="../js/auth.js"></script>
+  <script src="../js/payments.js"></script>
+  <script src="../js/app.js"></script>
+</body>
+</html>

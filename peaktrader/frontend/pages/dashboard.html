@@ -1,0 +1,247 @@
+<!-- frontend/pages/dashboard.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard — PeakTrader</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=IBM+Plex+Mono:wght@400;500&family=Manrope:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/main.css">
+  <link rel="stylesheet" href="../css/dashboard.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+</head>
+<body class="dashboard" data-page="dashboard">
+  
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">Peak<span>Trader</span></div>
+    
+    <div class="sidebar-section">Trading</div>
+    <a href="dashboard.html" class="sidebar-item active">
+      <span class="sidebar-icon">◈</span> Dashboard
+    </a>
+    <button class="sidebar-item" onclick="document.getElementById('tradePanel').scrollIntoView({behavior: 'smooth'})">
+      <span class="sidebar-icon">📈</span> Trade Now
+    </button>
+    <button class="sidebar-item">
+      <span class="sidebar-icon">⏱</span> Open Positions
+    </button>
+    <button class="sidebar-item">
+      <span class="sidebar-icon">📋</span> Trade History
+    </button>
+    
+    <div class="sidebar-section">Account</div>
+    <a href="deposit.html" class="sidebar-item">
+      <span class="sidebar-icon">💰</span> Deposit / Withdraw
+    </a>
+    <button class="sidebar-item">
+      <span class="sidebar-icon">🏆</span> Tournaments
+    </button>
+    <button class="sidebar-item">
+      <span class="sidebar-icon">⚙️</span> Settings
+    </button>
+    
+    <div class="sidebar-bottom">
+      <div class="user-pill">
+        <div class="avatar user-avatar">--</div>
+        <div class="user-info">
+          <div class="user-name">Loading...</div>
+          <div class="user-bal user-balance">KES 0.00</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="main-content">
+    <header class="top-bar">
+      <h1 class="page-title">Trading Dashboard</h1>
+      <div class="live-time" id="liveTime">
+        <span class="live-indicator"></span>
+        --:--:--
+      </div>
+    </header>
+
+    <div class="content-area">
+      <!-- Metrics -->
+      <div class="metrics-grid">
+        <div class="metric-card">
+          <div class="metric-label">Account Balance</div>
+          <div class="metric-value user-balance">KES 0</div>
+          <div class="metric-change positive" id="todayPnL">+KES 0 today</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Win Rate (30D)</div>
+          <div class="metric-value positive" id="winRate">0%</div>
+          <div class="metric-change" style="color: var(--muted);">0 / 0 trades won</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Demo Balance</div>
+          <div class="metric-value" id="demoBalance" style="color: var(--blue);">KES 10,000</div>
+          <div class="metric-change" style="color: var(--muted);">Practice trading</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Open Positions</div>
+          <div class="metric-value" id="openCount">0</div>
+          <div class="metric-change" style="color: var(--amber);">Active trades</div>
+        </div>
+      </div>
+
+      <!-- Trading Section -->
+      <div class="trading-layout" id="tradePanel">
+        <!-- Chart -->
+        <div class="chart-panel">
+          <div class="chart-header">
+            <div>
+              <div class="chart-pair" id="currentPair">EUR/USD</div>
+              <div class="chart-pair-info">
+                <span id="currentPrice">1.08742</span>
+                <span style="color: var(--accent);">+0.023%</span>
+              </div>
+            </div>
+            <div class="chart-controls">
+              <div class="time-filters">
+                <button class="tf-btn active">30s</button>
+                <button class="tf-btn">1m</button>
+                <button class="tf-btn">5m</button>
+                <button class="tf-btn">15m</button>
+              </div>
+              <div class="chart-live">LIVE</div>
+            </div>
+          </div>
+          <div class="chart-container">
+            <canvas id="tradeChart"></canvas>
+          </div>
+        </div>
+
+        <!-- Order Panel -->
+        <div class="order-panel">
+          <div class="panel-title">Place Trade</div>
+          
+          <div class="asset-select-wrap">
+            <label class="form-label" style="margin-bottom: 6px;">Select Asset</label>
+            <select class="asset-select" id="assetSelect">
+              <option>EUR/USD</option>
+              <option>GBP/USD</option>
+              <option>USD/JPY</option>
+              <option>BTC/USD</option>
+              <option>ETH/USD</option>
+              <option>XAU/USD</option>
+              <option>Volatility 75</option>
+              <option>Boom 500</option>
+              <option>Crash 500</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="form-label" style="margin-bottom: 6px;">Trade Amount (KES)</label>
+            <div class="amount-input-wrap">
+              <span class="currency-prefix">KES</span>
+              <input type="number" class="amount-input" id="tradeAmount" value="500" min="100">
+            </div>
+            <div class="quick-amounts">
+              <button class="qa-btn" data-amount="500">500</button>
+              <button class="qa-btn" data-amount="1000">1K</button>
+              <button class="qa-btn" data-amount="2000">2K</button>
+              <button class="qa-btn" data-amount="5000">5K</button>
+            </div>
+          </div>
+
+          <div>
+            <label class="form-label" style="margin-bottom: 6px;">Expiry Time</label>
+            <div class="expiry-grid">
+              <div class="expiry-option active" data-expiry="30s">
+                <div class="expiry-time">30s</div>
+                <div class="expiry-label">30 Seconds</div>
+              </div>
+              <div class="expiry-option" data-expiry="1m">
+                <div class="expiry-time">1m</div>
+                <div class="expiry-label">1 Minute</div>
+              </div>
+              <div class="expiry-option" data-expiry="5m">
+                <div class="expiry-time">5m</div>
+                <div class="expiry-label">5 Minutes</div>
+              </div>
+              <div class="expiry-option" data-expiry="15m">
+                <div class="expiry-time">15m</div>
+                <div class="expiry-label">15 Minutes</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="payout-display">
+            <span class="payout-label">Potential Payout</span>
+            <span class="payout-value" id="payoutValue">KES 960</span>
+          </div>
+
+          <div style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted2);">
+            <input type="checkbox" id="demoToggle" style="accent-color: var(--accent);">
+            <label for="demoToggle" style="cursor: pointer;">Use Demo Balance</label>
+          </div>
+
+          <div class="trade-buttons">
+            <button class="btn-trade btn-up" id="btnUp">▲ UP</button>
+            <button class="btn-trade btn-down" id="btnDown">▼ DOWN</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Open Positions -->
+      <div class="data-table">
+        <div class="table-header">
+          <div class="table-title">Open Positions</div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Asset</th>
+                <th>Direction</th>
+                <th>Amount</th>
+                <th>Expiry</th>
+                <th>Status</th>
+                <th>Time Left</th>
+              </tr>
+            </thead>
+            <tbody id="openPositionsBody">
+              <!-- Dynamic content -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Recent Trades -->
+      <div class="data-table">
+        <div class="table-header">
+          <div class="table-title">Recent Trades</div>
+          <button class="nav-btn" style="font-size: 12px; background: none; border: none; color: var(--accent); cursor: pointer;">View All →</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Asset</th>
+                <th>Direction</th>
+                <th>Amount</th>
+                <th>Expiry</th>
+                <th>Result</th>
+                <th>P&L</th>
+                <th>Time</th>
+              </tr>
+            </thead>
+            <tbody id="tradesHistoryBody">
+              <!-- Dynamic content -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script src="../js/api.js"></script>
+  <script src="../js/auth.js"></script>
+  <script src="../js/charts.js"></script>
+  <script src="../js/trading.js"></script>
+  <script src="../js/app.js"></script>
+</body>
+</html>
