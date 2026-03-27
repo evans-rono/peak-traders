@@ -1,148 +1,143 @@
 // frontend/js/charts.js
-// Chart.js configuration and price feed handling
-let priceChart = null;
-let priceSocket = null;
-let currentPrices = {};
+// Chart management and price feed
 
-function initChart(canvasId, initialData = []) {
-  const ctx = document.getElementById(canvasId);
-  if (!ctx) return null;
+let chart = null;
+const chartData = { labels: [], prices: [] };
+const localPrices = {};
+const MAX_POINTS = 60;
 
-  const gradient = ctx.getContext('2d').createLinearGradient(0, 0, 0, 400);
-  gradient.addColorStop(0, 'rgba(0,229,160,0.1)');
-  gradient.addColorStop(1, 'rgba(0,229,160,0)');
+// WebSocket price feed
+let ws = null;
 
-  priceChart = new Chart(ctx, {
+function connectPriceFeed(onPriceUpdate) {
+  ws = new WebSocket('ws://localhost:5000/ws/prices');
+
+  ws.onopen = () => {
+    console.log('Price feed connected');
+  };
+
+  ws.onmessage = (event) => {
+    try {
+      const msg = JSON.parse(event.data);
+      if (msg.type === 'prices') {
+        Object.assign(localPrices, msg.data);
+        if (onPriceUpdate) onPriceUpdate(msg.data);
+      }
+    } catch (e) {
+      console.error('Price feed parse error:', e);
+    }
+  };
+
+  ws.onerror = () => {
+    console.warn('WebSocket error — falling back to polling');
+    pollPrices(onPriceUpdate);
+  };
+
+  ws.onclose = () => {
+    console.log('Price feed disconnected');
+    // Reconnect after 3 seconds
+    setTimeout(() => connectPriceFeed(onPriceUpdate), 3000);
+  };
+}
+
+function disconnectPriceFeed() {
+  if (ws) {
+    ws.close();
+    ws = null;
+  }
+}
+
+// Fallback: poll REST endpoint if WebSocket fails
+async function pollPrices(onPriceUpdate) {
+  try {
+    const assets = await api.getAssets();
+    assets.forEach(a => { localPrices[a.pair] = a.price; });
+    if (onPriceUpdate) onPriceUpdate(localPrices);
+  } catch (e) {
+    console.error('Price poll failed:', e);
+  }
+  setTimeout(() => pollPrices(onPriceUpdate), 2000);
+}
+
+function getCurrentPrice(pair) {
+  return localPrices[pair] || null;
+}
+
+function updateChartData(price) {
+  if (!price) return;
+
+  const now = new Date().toLocaleTimeString('en-KE', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+  chartData.labels.push(now);
+  chartData.prices.push(price);
+
+  if (chartData.labels.length > MAX_POINTS) {
+    chartData.labels.shift();
+    chartData.prices.shift();
+  }
+
+  if (chart) {
+    chart.data.labels = [...chartData.labels];
+    chart.data.datasets[0].data = [...chartData.prices];
+    chart.update('none'); // 'none' = no animation for live data
+  }
+}
+
+function initChart(canvasId) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+
+  const ctx = canvas.getContext('2d');
+
+  chart = new Chart(ctx, {
     type: 'line',
     data: {
-      labels: initialData.map(d => d.time),
+      labels: chartData.labels,
       datasets: [{
         label: 'Price',
-        data: initialData.map(d => d.price),
-        borderColor: '#00e5a0',
-        backgroundColor: gradient,
+        data: chartData.prices,
+        borderColor: '#00ff88',
         borderWidth: 2,
         pointRadius: 0,
-        pointHoverRadius: 6,
         fill: true,
-        tension: 0.4
+        backgroundColor: (context) => {
+          const gradient = context.chart.ctx.createLinearGradient(0, 0, 0, 300);
+          gradient.addColorStop(0, 'rgba(0,255,136,0.15)');
+          gradient.addColorStop(1, 'rgba(0,255,136,0)');
+          return gradient;
+        },
+        tension: 0.3
       }]
     },
     options: {
       responsive: true,
       maintainAspectRatio: false,
-      interaction: {
-        intersect: false,
-        mode: 'index',
-      },
+      animation: false,
+      interaction: { intersect: false, mode: 'index' },
       plugins: {
         legend: { display: false },
         tooltip: {
-          backgroundColor: '#1c2230',
-          titleColor: '#6b7280',
-          bodyColor: '#e8eaf0',
-          borderColor: 'rgba(0,229,160,0.3)',
+          backgroundColor: '#1a1a2e',
+          borderColor: '#00ff88',
           borderWidth: 1,
-          padding: 12,
-          displayColors: false,
+          titleColor: '#a0a0b0',
+          bodyColor: '#ffffff',
           callbacks: {
-            label: (context) => ` ${context.parsed.y.toFixed(5)}`
+            label: (ctx) => ` ${ctx.parsed.y.toFixed(5)}`
           }
         }
       },
       scales: {
         x: {
-          grid: {
-            color: 'rgba(255,255,255,0.03)',
-            drawBorder: false
-          },
-          ticks: {
-            color: '#6b7280',
-            font: { family: 'IBM Plex Mono', size: 10 },
-            maxTicksLimit: 8
-          }
+          ticks: { color: '#606080', font: { size: 10 }, maxTicksLimit: 8 },
+          grid: { color: 'rgba(255,255,255,0.03)' }
         },
         y: {
           position: 'right',
-          grid: {
-            color: 'rgba(255,255,255,0.03)',
-            drawBorder: false
-          },
-          ticks: {
-            color: '#6b7280',
-            font: { family: 'IBM Plex Mono', size: 10 }
-          }
+          ticks: { color: '#606080', font: { size: 10 } },
+          grid: { color: 'rgba(255,255,255,0.05)' }
         }
-      },
-      animation: false
-    }
-  });
-
-  return priceChart;
-}
-
-function updateChartData(newPrice) {
-  if (!priceChart) return;
-
-  const now = new Date();
-  const timeLabel = now.toLocaleTimeString('en-KE', { 
-    hour12: false, 
-    hour: '2-digit', 
-    minute: '2-digit',
-    second: '2-digit'
-  });
-
-  priceChart.data.labels.push(timeLabel);
-  priceChart.data.datasets[0].data.push(newPrice);
-
-  // Keep last 100 data points
-  if (priceChart.data.labels.length > 100) {
-    priceChart.data.labels.shift();
-    priceChart.data.datasets[0].data.shift();
-  }
-
-  priceChart.update('none');
-}
-
-function connectPriceFeed(onPriceUpdate) {
-  const wsUrl = `ws://localhost:5000/ws/prices`;
-  
-  priceSocket = new WebSocket(wsUrl);
-
-  priceSocket.onopen = () => {
-    console.log('Connected to price feed');
-  };
-
-  priceSocket.onmessage = (event) => {
-    const message = JSON.parse(event.data);
-    
-    if (message.type === 'prices') {
-      currentPrices = message.data;
-      if (onPriceUpdate) {
-        onPriceUpdate(message.data);
       }
     }
-  };
-
-  priceSocket.onerror = (error) => {
-    console.error('Price feed error:', error);
-  };
-
-  priceSocket.onclose = () => {
-    console.log('Price feed disconnected. Reconnecting...');
-    setTimeout(() => connectPriceFeed(onPriceUpdate), 3000);
-  };
-
-  return priceSocket;
-}
-
-function disconnectPriceFeed() {
-  if (priceSocket) {
-    priceSocket.close();
-    priceSocket = null;
-  }
-}
-
-function getCurrentPrice(pair) {
-  return currentPrices[pair] || null;
+  });
 }

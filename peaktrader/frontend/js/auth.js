@@ -1,5 +1,4 @@
 // frontend/js/auth.js
-// Authentication state management
 const AuthManager = {
   user: null,
   
@@ -53,14 +52,16 @@ const AuthManager = {
   },
 
   updateUI() {
-    // Update user display elements
     document.querySelectorAll('.user-name').forEach(el => {
       if (this.user) el.textContent = `${this.user.firstName} ${this.user.lastName}`;
     });
     
     document.querySelectorAll('.user-balance').forEach(el => {
       if (this.user) {
-        el.textContent = `KES ${this.user.balance.toLocaleString()}`;
+        el.textContent = `$ ${this.user.balance.toLocaleString('en-US', {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2
+        })}`;
       }
     });
 
@@ -80,9 +81,7 @@ const AuthManager = {
   }
 };
 
-// Form handlers
 document.addEventListener('DOMContentLoaded', () => {
-  // Login form
   const loginForm = document.getElementById('loginForm');
   if (loginForm) {
     loginForm.addEventListener('submit', async (e) => {
@@ -111,7 +110,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Register form
   const registerForm = document.getElementById('registerForm');
   if (registerForm) {
     registerForm.addEventListener('submit', async (e) => {
@@ -119,7 +117,6 @@ document.addEventListener('DOMContentLoaded', () => {
       const submitBtn = registerForm.querySelector('button[type="submit"]');
       const errorDiv = document.getElementById('registerError');
 
-      // Validation
       const password = document.getElementById('password').value;
       const confirmPassword = document.getElementById('confirmPassword').value;
       
@@ -162,7 +159,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Logout buttons
   document.querySelectorAll('.logout-btn').forEach(btn => {
     btn.addEventListener('click', () => AuthManager.logout());
   });
